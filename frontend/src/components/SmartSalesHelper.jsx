@@ -2,7 +2,7 @@ import { useState } from 'react'
 import RiskResult from './RiskResult'
 import { DEMOS, PRODUCTS, SOURCES } from '../data/constants'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001/api/analyze-cod'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api/analyze-cod'
 
 const EMPTY_FORM = {
   name: '', orderValue: '', payment: 'COD',
@@ -37,13 +37,28 @@ export default function SmartSalesHelper() {
     setResult(null)
 
     try {
-      const res  = await fetch(BACKEND_URL, {
-        method:  'POST',
+      const res = await fetch(BACKEND_URL, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(form),
+        body: JSON.stringify(form),
       })
-      const json = await res.json()
-      if (!json.success) throw new Error(json.error)
+
+      const text = await res.text();
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        console.error('Expected JSON but received:', text.substring(0, 200));
+        throw new Error('Server returned non-JSON response');
+      }
+
+      let json;
+      try {
+        json = JSON.parse(text);
+      } catch (err) {
+        console.error('Invalid JSON from server:', text.substring(0, 1000));
+        throw new Error('Invalid JSON from server');
+      }
+
+      if (!json.success) throw new Error(json.error || 'Unknown backend error');
       setResult(json.data)
     } catch (e) {
       setError(e.message || 'Backend se connect nahi ho pa raha. node server.js chala rahe ho?')

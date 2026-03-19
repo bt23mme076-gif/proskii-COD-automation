@@ -1,112 +1,163 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const cors    = require('cors');
+const fs      = require('fs');
+const path    = require('path');
+const Groq = require('groq-sdk');
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const FREE_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+// Groq setup (using GROQ_API_KEY from .env)
 
-// ─── Load historical CSV training data ───────────────
-// CSV se nikali summary — ye AI ko real Proskii patterns sikhata hai
-const PROSKII_HISTORY = {
-  total_orders: 44,
-  risk_rate_pct: 32,
-  common_issues: {
-    incomplete_address: 4,   // "0-/" wale addresses
-    no_call_pickup: 4,        // customer ne phone nahi uthaya
-    institutional_address: 3, // hospital/hostel/hotel
-    junk_address: 1,
-    whatsapp_fallback: 2,
-    hotel_address: 1
-  },
-  // City wise risk (cancelled/total)
-  city_risk: {
-    "Ahmedabad": { risk: 1, total: 1 },
-    "Jalandhar": { risk: 1, total: 2 },
-    "Ludhiana":  { risk: 1, total: 3 },
-    "Delhi":     { risk: 1, total: 6 },
-    "Mumbai":    { risk: 0, total: 4 },
-    "Pune":      { risk: 0, total: 2 },
-    "Gurgaon":   { risk: 0, total: 3 },
-    "Bangalore": { risk: 0, total: 2 },
-    "Hyderabad": { risk: 1, total: 3 },
-  },
-  // Product wise risk
-  product_risk: {
-    "Variety Pack (4-pack)": { risk: 3, total: 18 },
-    "Double Chocolate - 2-pack": { risk: 2, total: 9 },
-    "Founders' Pick": { risk: 1, total: 8 },
-    "Mocha Madness": { risk: 1, total: 4 },
-    "Peanut Butter - 2-pack": { risk: 0, total: 3 },
-    "Honey Crunch - 2-pack": { risk: 0, total: 3 },
-  },
-  // Patterns jo Proskii ne observe kiye hain
-  observed_patterns: [
-    "Address starting with '0-/' = Shopify incomplete autofill = HIGH risk of NDR",
-    "Hotel/hospital/hostel address = delivery failure risk if no one present",
-    "Customer didn't pick up call = 60% chance of RTO",
-    "Confirmation 'N' = certain cancel",
-    "Ludhiana + Punjab orders had 1 cancellation out of 3 (33% risk)",
-    "Mumbai + MH orders = 0 cancellations out of 4 (low risk zone)",
-    "Instagram Ad first-time buyers = higher cancel rate than referrals",
-    "Orders with updated/corrected address = usually safe after confirmation",
-    "Pincode missing or mismatched = moderate NDR risk",
-    "WhatsApp fallback confirmation orders = slightly higher risk than direct call confirm"
-  ]
-};
+// ─── CSV Parse ───────────────────────────────────────
+function parseCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
 
-// ─── Build context string for AI prompt ──────────────
-function buildHistoryContext(orderCity, orderProduct, orderNotes, orderAddr) {
-  const addr = (orderAddr || '').toLowerCase();
-  const notes = (orderNotes || '').toLowerCase();
-  
-  // Find similar city data
-  const cityKey = Object.keys(PROSKII_HISTORY.city_risk).find(c => 
-    orderCity && orderCity.toLowerCase().includes(c.toLowerCase())
+function loadCSV(filePath) {
+  try {
+    const text    = fs.readFileSync(filePath, 'utf-8');
+    const lines   = text.split(/\r?\n/).filter(l => l.trim());
+    const headers = parseCSVLine(lines[0]);
+    const rows    = [];
+    for (let i = 1; i < lines.length; i++) {
+      const vals = parseCSVLine(lines[i]);
+      const obj  = {};
+      headers.forEach((h, idx) => obj[h.trim()] = (vals[idx] || '').trim());
+      const id = obj['Order ID'] || '';
+      if (!id || id === 'OLD') continue;
+      rows.push(obj);
+    }
+    return rows;
+  } catch (e) {
+    console.warn('CSV load failed:', e.message);
+    return [];
+  }
+}
+
+function buildHistoryFromCSV(rows) {
+  const cityRisk    = {};
+  const productRisk = {};
+  const issues      = {
+    incomplete_address: 0, no_call_pickup: 0,
+    institutional_address: 0, junk_address: 0,
+    hotel_address: 0, whatsapp_fallback: 0
+  };
+  let riskCount = 0;
+
+  rows.forEach(r => {
+    const conf  = (r['Confirmation (Y/N)'] || '').toUpperCase();
+    const notes = (r['Notes'] || '').toLowerCase();
+    const addr  = (r['Address Line 1'] || '').toLowerCase();
+    const city  = (r['Address City'] || r['Address State'] || 'Unknown').trim();
+    const prod  = (r['Product Name'] || '').trim().substring(0, 40);
+
+    const isRisky = conf === 'N'
+      || addr.startsWith('0-/')
+      || notes.includes("didn't pick")
+      || notes.includes('junk address')
+      || notes.includes('no address');
+
+    if (isRisky) riskCount++;
+
+    if (!cityRisk[city])    cityRisk[city]    = { risk: 0, total: 0 };
+    if (!productRisk[prod]) productRisk[prod] = { risk: 0, total: 0 };
+    cityRisk[city].total++;
+    productRisk[prod].total++;
+    if (isRisky) { cityRisk[city].risk++; productRisk[prod].risk++; }
+
+    if (addr.startsWith('0-/'))                                    issues.incomplete_address++;
+    if (notes.includes("didn't pick") || notes.includes('no call')) issues.no_call_pickup++;
+    if (addr.includes('hospital') || addr.includes('hostel'))       issues.institutional_address++;
+    if (notes.includes('junk'))                                    issues.junk_address++;
+    if (addr.includes('hotel'))                                    issues.hotel_address++;
+    if (notes.includes('whatsapp'))                                issues.whatsapp_fallback++;
+  });
+
+  return {
+    total_orders:  rows.length,
+    risk_rate_pct: rows.length ? Math.round(riskCount / rows.length * 100) : 0,
+    city_risk:     cityRisk,
+    product_risk:  productRisk,
+    common_issues: issues,
+    observed_patterns: [
+      "Address starting with '0-/' = Shopify incomplete autofill = HIGH NDR risk",
+      "Hotel/hospital/hostel address = delivery failure if no one present to receive",
+      "Customer didn't pick up call = 60% RTO chance",
+      "Confirmation 'N' = order will definitely cancel",
+      "Mumbai/Pune/Bangalore orders = historically low risk in Proskii data",
+      "Instagram Ad first-time buyers = higher cancel rate than referrals",
+      "Missing pincode or city = moderate NDR risk",
+      "WhatsApp fallback = slightly higher risk than direct call confirmation",
+    ],
+  };
+}
+
+// Load CSV at startup
+const CSV_PATH = path.join(__dirname, 'proskii_orders.csv');
+const csvRows  = loadCSV(CSV_PATH);
+const HISTORY  = buildHistoryFromCSV(csvRows);
+console.log(`📊 CSV loaded: ${HISTORY.total_orders} orders | Risk rate: ${HISTORY.risk_rate_pct}%`);
+
+// ─── Build AI context ────────────────────────────────
+function buildContext(city, product, notes, address) {
+  const addr = (address || '').toLowerCase();
+  const nt   = (notes   || '').toLowerCase();
+
+  const cityKey = Object.keys(HISTORY.city_risk).find(c =>
+    city && city.toLowerCase().includes(c.toLowerCase())
   );
-  const cityData = cityKey ? PROSKII_HISTORY.city_risk[cityKey] : null;
-  
-  // Find similar product data
-  const prodKey = Object.keys(PROSKII_HISTORY.product_risk).find(p =>
-    orderProduct && orderProduct.toLowerCase().includes(p.toLowerCase().split(' ')[0])
-  );
-  const prodData = prodKey ? PROSKII_HISTORY.product_risk[prodKey] : null;
+  const cityData = cityKey ? HISTORY.city_risk[cityKey] : null;
 
-  // Active risk signals for this order
+  const prodKey = Object.keys(HISTORY.product_risk).find(p =>
+    product && product.toLowerCase().includes(p.toLowerCase().split(' ')[0])
+  );
+  const prodData = prodKey ? HISTORY.product_risk[prodKey] : null;
+
   const signals = [];
-  if (addr.startsWith('0-/'))    signals.push("ADDRESS STARTS WITH '0-/' — in Proskii history, 4/4 such orders had delivery issues");
-  if (addr.includes('hotel'))    signals.push("HOTEL ADDRESS — 1 such order in history, needed extra confirmation");
-  if (addr.includes('hospital') || addr.includes('hostel')) signals.push("INSTITUTIONAL ADDRESS — 3 such orders in history had NDR risk");
-  if (notes.includes("pick up")) signals.push("NO CALL PICKUP — 4/4 such orders in Proskii data had follow-up issues");
-  if (notes.includes('whatsapp'))signals.push("WHATSAPP FALLBACK — slightly higher risk in Proskii history");
+  if (addr.startsWith('0-/'))
+    signals.push(`ADDRESS STARTS WITH '0-/' — ${HISTORY.common_issues.incomplete_address} such orders in Proskii data, all had delivery issues`);
+  if (addr.includes('hotel'))
+    signals.push(`HOTEL ADDRESS — ${HISTORY.common_issues.hotel_address} such order(s) in Proskii history`);
+  if (addr.includes('hospital') || addr.includes('hostel'))
+    signals.push(`INSTITUTIONAL ADDRESS — ${HISTORY.common_issues.institutional_address} such orders had NDR risk`);
+  if (nt.includes("pick up") || nt.includes('no call'))
+    signals.push(`NO CALL PICKUP — ${HISTORY.common_issues.no_call_pickup} such orders in data, high RTO risk`);
+  if (nt.includes('whatsapp'))
+    signals.push(`WHATSAPP FALLBACK — ${HISTORY.common_issues.whatsapp_fallback} such orders, slightly higher risk`);
 
-  let ctx = `=== PROSKII REAL ORDER HISTORY (${PROSKII_HISTORY.total_orders} past orders) ===
-Overall cancel/risk rate: ${PROSKII_HISTORY.risk_rate_pct}% of orders had some issue.
+  let ctx = `=== PROSKII REAL ORDER HISTORY (${HISTORY.total_orders} actual past orders) ===
+Overall risk rate: ${HISTORY.risk_rate_pct}% orders had cancellation or delivery issues.
 
-KEY PATTERNS FROM PROSKII'S ACTUAL DATA:
-${PROSKII_HISTORY.observed_patterns.map(p => '- ' + p).join('\n')}
+KEY PATTERNS FROM PROSKII DATA:
+${HISTORY.observed_patterns.map(p => '- ' + p).join('\n')}
 `;
 
   if (cityData) {
-    const cityRisk = Math.round(cityData.risk / cityData.total * 100);
-    ctx += `\nCITY MATCH — ${cityKey}: ${cityData.risk} issues out of ${cityData.total} orders (${cityRisk}% risk rate in Proskii history)`;
+    const r = Math.round(cityData.risk / cityData.total * 100);
+    ctx += `\nCITY MATCH — "${cityKey}": ${cityData.risk} issues / ${cityData.total} orders = ${r}% risk rate`;
   }
   if (prodData) {
-    const prodRisk = Math.round(prodData.risk / prodData.total * 100);
-    ctx += `\nPRODUCT MATCH — ${prodKey}: ${prodData.risk} issues out of ${prodData.total} orders (${prodRisk}% risk rate in Proskii history)`;
+    const r = Math.round(prodData.risk / prodData.total * 100);
+    ctx += `\nPRODUCT MATCH — "${prodKey}": ${prodData.risk} issues / ${prodData.total} orders = ${r}% risk rate`;
   }
-  if (signals.length > 0) {
-    ctx += `\n\nRISK SIGNALS DETECTED FOR THIS ORDER:\n${signals.map(s => '⚠ ' + s).join('\n')}`;
+  if (signals.length) {
+    ctx += `\n\n⚠ RISK SIGNALS DETECTED:\n${signals.map(s => '  • ' + s).join('\n')}`;
   }
-  
-  ctx += `\n=== USE THIS HISTORY TO CALIBRATE YOUR PREDICTION ===`;
+
+  ctx += `\n=== USE THIS REAL DATA TO CALIBRATE YOUR PREDICTION ===`;
   return ctx;
 }
 
@@ -114,16 +165,19 @@ ${PROSKII_HISTORY.observed_patterns.map(p => '- ' + p).join('\n')}
 app.post('/api/analyze-cod', async (req, res) => {
   const {
     name = 'Unknown', orderValue, payment,
-    prevOrders, prevCancel, city, product, source, notes,
-    address = ''
+    prevOrders, prevCancel, city, product,
+    source, notes, address = ''
   } = req.body;
 
   if (!orderValue || !payment) {
     return res.status(400).json({ error: 'orderValue aur payment required hai' });
   }
 
-  // Build history context using real Proskii data
-  const historyContext = buildHistoryContext(city, product, notes, address);
+  if (!process.env.GROQ_API_KEY) {
+    return res.status(500).json({ error: '.env mein GROQ_API_KEY set nahi hai' });
+  }
+
+  const historyContext = buildContext(city, product, notes, address);
 
   const prompt = `${historyContext}
 
@@ -136,57 +190,52 @@ app.post('/api/analyze-cod', async (req, res) => {
 - City/State: ${city || 'Unknown'}
 - Product: ${product || 'Not specified'}
 - Traffic Source: ${source || 'Unknown'}
-- Address snippet: ${address || 'Not provided'}
+- Address: ${address || 'Not provided'}
 - Call Notes: ${notes || 'None'}
 
-Based on Proskii's REAL historical data above, predict this order's COD cancellation risk.
-Be specific — reference the actual patterns from Proskii's history in your reasoning.
+Based on Proskii's REAL historical data above, predict this COD order's cancellation risk.
+Reference specific patterns from the data in your reasoning.
 
-Respond ONLY with raw valid JSON, no markdown, no backticks:
-{"riskScore":<0-100>,"riskLevel":"Low|Medium|High","category":"Fitness Enthusiast|Weight Loss Seeker|Healthy Breakfast Buyer|Curious First-Timer|Gifting Customer","buyerType":"one line","actions":["action1","action2","action3"],"reasoning":"2-3 sentences referencing Proskii actual data patterns"}`;
+Respond ONLY with raw valid JSON (no markdown, no backticks):
+{"riskScore":<0-100>,"riskLevel":"Low|Medium|High","category":"Fitness Enthusiast|Weight Loss Seeker|Healthy Breakfast Buyer|Curious First-Timer|Gifting Customer","buyerType":"one line description","actions":["action1","action2","action3"],"reasoning":"2-3 sentences referencing Proskii actual data patterns"}`;
 
   try {
-    const response = await fetch(OPENROUTER_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://proskii.com',
-        'X-Title': 'Proskii Smart Sales Helper',
-      },
-      body: JSON.stringify({
-        model: FREE_MODEL,
-        messages: [
-          { role: 'system', content: 'You are a COD risk analyzer trained on Proskii\'s real order data. Reference actual patterns in reasoning. Respond only with valid JSON, no markdown.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 800,
-      }),
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.2,
+      max_tokens: 800,
+      messages: [
+        { role: 'system', content: 'You are a COD risk analyzer. Respond only with valid JSON, no markdown.' },
+        { role: 'user', content: prompt }
+      ],
     });
 
-    const json = await response.json();
-    if (json.error) return res.status(500).json({ error: json.error.message });
+    const rawText = completion.choices[0]?.message?.content || '';
+    console.log('Groq response:', rawText.substring(0, 150));
 
-    const rawText = json.choices?.[0]?.message?.content || '';
-    const clean = rawText.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
-    return res.json({ success: true, data: result });
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Valid JSON nahi mila');
+
+    const data = JSON.parse(jsonMatch[0]);
+    return res.json({ success: true, data });
 
   } catch (err) {
-    console.error('Error:', err.message);
-    return res.status(500).json({ error: 'Analysis fail ho gayi' });
+    console.error('Groq error:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/health', (req, res) => res.json({ 
-  status: 'ok', 
-  training_orders: PROSKII_HISTORY.total_orders,
-  model: FREE_MODEL 
+// ─── GET /health ─────────────────────────────────────
+app.get('/health', (req, res) => res.json({
+  status:          'ok',
+  training_orders: HISTORY.total_orders,
+  risk_rate:       HISTORY.risk_rate_pct + '%',
+  model:           'gemini-1.5-flash-latest',
+  api_key_set:     !!process.env.GROQ_API_KEY,
 }));
 
 app.listen(PORT, () => {
   console.log(`✅ Proskii backend: http://localhost:${PORT}`);
-  console.log(`   Training data: ${PROSKII_HISTORY.total_orders} real orders loaded`);
-  console.log(`   Model: ${FREE_MODEL}`);
+  console.log(`   Model: llama-3.3-70b-versatile`);
+  console.log(`   API Key: ${process.env.GROQ_API_KEY ? '✅ set' : '❌ MISSING!'}`);
 });
