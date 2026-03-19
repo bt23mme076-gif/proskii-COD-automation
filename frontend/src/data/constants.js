@@ -7,7 +7,7 @@ export const DEMOS = {
     notes: 'Customer asked about return policy before confirming',
   },
   medium: {
-    name: 'Priya Sharma', orderValue: '799', payment: 'COD',
+    name: 'Priya Sharma', orderValue: '1524', payment: 'COD',
     prevOrders: '1', prevCancel: '0', city: 'Indore, MP',
     product: 'Healthy Breakfast Mix', source: 'Facebook Ad',
     address: '355, Vishnupuri NX, Aditya Nagar Road',

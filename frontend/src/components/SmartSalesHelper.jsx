@@ -121,7 +121,7 @@ export default function SmartSalesHelper() {
             <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="Ramesh Kumar" />
           </Field>
           <Field label="Order Value (₹)">
-            <input type="number" value={form.orderValue} onChange={e => set('orderValue', e.target.value)} placeholder="799" />
+            <input type="number" value={form.orderValue} onChange={e => set('orderValue', e.target.value)} placeholder="1524" />
           </Field>
           <Field label="Payment Mode">
             <select value={form.payment} onChange={e => set('payment', e.target.value)}>
