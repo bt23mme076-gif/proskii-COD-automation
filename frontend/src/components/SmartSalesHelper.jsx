@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RiskResult from './RiskResult'
-import { DEMOS, PRODUCTS, SOURCES } from '../data/constants'
+import { DEMOS, PRODUCTS, SOURCES, PROSKII_HISTORY } from '../data/constants'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api/analyze-cod'
 
@@ -16,6 +16,31 @@ export default function SmartSalesHelper() {
   const [loading, setLoading] = useState(false)
   const [result, setResult]   = useState(null)
   const [error, setError]     = useState('')
+  const [trainingCount, setTrainingCount] = useState(null)
+  const [trainingLoading, setTrainingLoading] = useState(false)
+  const BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+  const healthUrl = `${BASE.replace(/\/$/, '')}/health`;
+
+  async function refreshTrainingCount() {
+    setTrainingLoading(true)
+    try {
+      const r = await fetch(healthUrl);
+      const j = await r.json();
+      if (j && typeof j.training_orders !== 'undefined') setTrainingCount(j.training_orders)
+    } catch (e) {
+      // ignore
+    } finally {
+      setTrainingLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    let mounted = true;
+    // initial fetch
+    refreshTrainingCount();
+    const id = setInterval(() => { if (mounted) refreshTrainingCount() }, 30000);
+    return () => { mounted = false; clearInterval(id) }
+  }, [])
 
   function set(field, val) {
     setForm(prev => ({ ...prev, [field]: val }))
@@ -94,7 +119,13 @@ export default function SmartSalesHelper() {
             animation: 'pulse 2s ease-in-out infinite',
           }} />
           <style>{`@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}`}</style>
-          AI Active · 44 orders trained
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span>AI Active · {trainingCount ?? PROSKII_HISTORY.total_orders} orders trained</span>
+            <button onClick={refreshTrainingCount} title="Refresh count" style={{
+              background: 'transparent', border: 'none', color: 'var(--accent2)', cursor: 'pointer', padding: 6,
+            }}>{trainingLoading ? <span style={{width:12,height:12,display:'inline-block',border:'2px solid rgba(255,255,255,0.2)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin 0.7s linear infinite'}} /> : '⟳'}</button>
+          </span>
         </div>
       </header>
 

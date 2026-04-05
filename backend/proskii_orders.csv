@@ -1,15 +1,6 @@
 Order ID,Product Name,Product Quantity,Customer Name,Customer Email,Customer Mobile,Confirmation (Y/N),Address Line 1,Address Line 2,Address City,Address State,Address Pincode,Address Confirmation Required (Y/N),Updated Address,Notes
-1647,Variety Pack (4-pack),1,Aadvik Goel,aadvikgoel79@gmail.com,9654279304,,"0-/, House number 12 Road number 25 ground floor East punjab baghnew DelhiWest Delhi, Delhi, 110026, India",,,,,,,
-1648,Variety Pack (4-pack),1,Yajas Sareen,yajas2007@gmail.com,9821801465,,"3/5 East Patel Nagar 3rd Floor Above Central Bank Of India 3/5 3rd floor abovecentral bankCentral Delhi, Delhi, 110008, India",,,,,,,
-1638,Variety Pack 4-pack,1,patel shrish,shrishpatel4@gmail.com,9924416400,N,"108 nandanbagh shela behind applewoods ahmedabad shela behind applewoodnear sky cityAhmedabad, Gujarat, 380058, India",,Ahmedabad,GJ,380058,N,,
-,,,,,,,,,,,,,"Horizon apartments 201, banjara hills
-500034",Get full address - is marked incomplete 
-,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,
-OLD,,,,,,,,,,,,,,
+1758,Variety Pack (4-pack),1,Tejas Shah,tejasshah1804@gmail.com,9738822006,,"Kotwali Chowk,Sadar BazarRaipur, Chhattisgarh, 492001, India",,,,,Y,,Get first line address
+1759,Double Chocolate - 2-pack,1,DHANA MANCHUKONDA,dhanavardhan@icloud.com,8008999900,,"Dhanalaxmi Jewellers MG RoadDabathotaVizianagaram, Andhra Pradesh, 535001, India",,,,,Y,,Get first line address
 #1541,Double Chocolate - 2-pack,1,Adaa Arora,adaaarora@icloud.com,9914963515,Y,behind Rana hospital,,Jalandhar,PB,144003,y,"304 R Model Town, Jalandhar ( behind Rana hospital, corner house)",JUNK ADDRESS - GET FULL ADDRESS
 #1542,Double Chocolate - 2-pack,1,Kaarya Italiya,kaarya2008@gmail.com,8758350000,Y,"A & J house ghod dod, Road Surat",,Surat,GJ,395007,y,"3rd floor, A & J house, Above AJILIYAA, Kakadiya complex lane, Ghod Dod Rd, Surat, Gujarat 395007",GET FIRST LINE ADDRESS
 #1543,Double Chocolate - 2-pack,1,Tanisha Kaur,tanisha.k1201@gmail.com,9833064659,Y,"1101 SV Patel Road Vithaldas Nagar, Santacruz (West)",,Mumbai,MH,400054,n,,
@@ -30,9 +21,7 @@ Near smart bazar ( Reliance Mart )",
 1567,Founders’ Pick: Mocha + Double Chocolate,1,Vrushabh .,vrushabhmali03@gmail.com,9820189121,Y,"A/23, Harsha Apartment, hardevi society, JogeshwariEast, MumbaiMumbai, Maharashtra, 400060, India",,Mumbai,Maharashtra,400060,n,,
 1562,Founders’ Pick: Honey + Peanut Butter,1,Swastik Joshi,swastikjoshi1997@gmail.com,7837122551,Y,"House number 1622 Sector 7C behind Sidhupetrol stationChandigarh, Chandigarh, 160019, India",,Chandigarh,Chandigarh,160019,n,,
 1576,Founders’ Pick: Honey + Peanut Butter,1,Viraj Chowdhary,virajchowdhary4@gmail.com,8979242555,Y,"C204Sree casa grandeBangalore, Karnataka, 560103, India",,Bangalore,karnataka,560103,n,,
-,,,,,,,,,,,,,,
-,,,,,,,,,,,,,,
-OLD,,,,,,,,,,,,,,
+
 1526,Variety Pack 4-pack,1,nishika  Vaz,nishikakarlavaz@gmail.com,8698641028,Y,"flat 403, 4th Floor, Sky Water Apartments, Holy cross colony, Jairam Nagar, Vasco da gama, Goa - 403802 City:- vasco da gama Pincode:- 403802 Landmark:- opposite",Infinity bay,South Goa,Goa,403802,N,,On Another Call / Confirm through whatsapp
 1525,Mocha Madness - 2-pack,1,anshika -,anshikajadwani00@gmail.com,9810838224,Y,C3 block janakpuri 253 house,no. 4 floor,West Delhi,Delhi,110058,N,,
 1524,Double Chocolate - 2-pack,1,Rishab .,rishab.madaan123@icloud.com,8872630559,Y,544/122new shiv puri street no.3 near kali mata mandir Street no.3 near Kal i mata mandir,sekhewal road,Ludhiana,Punjab,141007,N,,
@@ -63,3 +52,27 @@ Also get email so she can get tracking details"
 1622,Founders’ Pick: Mocha + Double Chocolate,1,Yash palve,palveyash73@gmail.com,8766832163,Y,"Hotel Meenakshi , pandhripoolahmednagarAhmed Nagar, Maharashtra, 414601, India",,Ahmed Nagar,MH,414601,Y,He  will be there to pick up.,"Its a Hotel address, confirm if he wants it and he will be there to recieve it."
 1637,Honey Crunch - 2-pack,1,Asher Diaz,asherdiaz69@gmail.com,7093228230,Y,"Horizonapartments 201Hyderabad, Telangana, 500034, India",,Hyderabad,TL,,,,
 1636,Founders’ Pick: Mocha + Double Chocolate,1,Kanav sharma,sharmakanav2010@gmail.com,9625728244,Y,"Block D Anand Vihar D 72 Top FloorAnand ViharEast Delhi, Delhi, 110092, India",,Dl,Dl,,,,
+1647,Variety Pack (4-pack),1,Aadvik Goel,aadvikgoel79@gmail.com,9654279304,N,"0-/, House number 12 Road number 25 ground floor East punjab baghnew DelhiWest Delhi, Delhi, 110026, India",,,,,,,
+1648,Variety Pack (4-pack),1,Yajas Sareen,yajas2007@gmail.com,9821801465,Y,"3/5 East Patel Nagar 3rd Floor Above Central Bank Of India 3/5 3rd floor abovecentral bankCentral Delhi, Delhi, 110008, India",,,,,,"Yes
+3/5 East Patel Nagar 3rd floor
+110008",
+1638,Variety Pack 4-pack,1,patel shrish,shrishpatel4@gmail.com,9924416400,Y,"108 nandanbagh shela behind applewoods ahmedabad shela behind applewoodnear sky cityAhmedabad, Gujarat, 380058, India",,Ahmedabad,GJ,380058,N,,
+1654,Variety Pack 4-pack,1,Tista Paul Chowdhury,tistapaul77@gmail.com,8420940527,Y,"10/7/1 Bijoygarh , besideRamkrishna parkKolkata, West Bengal, 700032, India",,,,,Y,Address- 10/7/1 Bijoygarh Kolkata-700032 Landmark- beside Ramkrishna park,Get full address
+1661,Variety Pack 4-pack,1,Ishan .,ishanjirety24@gmail.com,8878005371,Y,"22 Alok appartment, B block 3rd floor21/2 Manoramaganj Near geeta bhavan ne xt to,NRK vilas ;Indore, Madhya Pradesh, 452001, India",,,,,N,,
+1666,Founders’ Pick: Mocha + Double Chocolate,1,Ayaan Kapoor,ayaankapoor38@gmail.com,9914535425,Y,"I block 501 jalandhar heights 2 Jalandhar heights 2501 i blockJalandhar, Punjab, 144001, India",,,,,N,,
+1685,Variety Pack 4-pack,1,Abhay Lohia,abhaylohia3233@gmail.com,9123013469,Y,"A Block 1412 Vellore Institute Of TechnologyKelambakkam-Vandalur RoadKanchipuram, Tamil Nadu, 600127, India",,,,,n,,
+1692,Double Chocolate - 2-pack,1,Kapil .,krao34869@gmail.com,9993043534,Y,"Windsors Hilla1-10 duplexGwalior, Madhya Pradesh, 474011, India",,,,,,gwalior 474001 sirol road windsor hills in front of mk city duplex A1-10,Confirm full adress
+1739,Variety Pack 4-pack,1,Anjali .,anjaligahlot027@gmail.com,9625459173,Y,"E-2/234, ground floor, Sector-11, Rohini, NewDelhi, DelhiNorth West Delhi, Delhi, 110085, India",,,,,n,,
+1736,Variety Pack 4-pack,1,Prabh Singh,,6280289998,Y,"B35/537A,Brs nagar main road sunetVillage sunetLudhiana, Punjab, 141012, India",,,,,n,,
+1723,Founders’ Pick: Mocha + Double Chocolate,1,Sanjeevani sihag,sanjeevanisihag@gmail.com,7303010855,Y,"Flat 2101 tower -6 Experion Windchants Sector 112 Dwarka Expressway Sector 109 Dwarka Expressway Sector 109 Raghopur, Dwarka Expressway Block T New Palam Vihar phase 2Gurugram HaryanaGurgaon, Haryana, 122017, India",,,,,n,,
+1722,Variety Pack 4-pack,1,Lobsang chukla,lobsangdc@gmail.com,9233151496,Y,"Hotel kameng bank tinali ItanagarKameng hotelPapum Pare, Arunachal Pradesh, 791111, India",,,,,y,Yes he will collect the order from given address,Hotel Address- confirm if he will be there and is a serios buyer
+1681,Variety Pack 4-pack,1,Ashmit .,ashmitchaudhary01@gmail.com,8586998389,Y,"655, Sector 14behind omsweetsGurgaon, Haryana, 122001, India",,,,,y,,"Try calling again
+Not a Whatsapp User"
+1742,Honey Crunch - 2-pack,1,Lune .,legolune16@gmail.com,9366553424,Y,"Adi Ningrio oposite kalinghardware storeChanglang, Arunachal Pradesh, 792103, India",,,,,y,"Vill - Adi Ningroo
+Lego recidense opposite Kaling Hardware
+Pin-792103
+Phon-9366553424
+Dist-Namsai. Arunachal Pradesh",Confirm full adress
+1733,Variety Pack 4-pack,1,Ayush Singh,helloayush2@gmail.com,9399145084,Y,"Plot no. 397,Indra Vihar Colony,Tp nagar,besides tagore udyan Plot no. 397,beside suzuki and ktm showroom,tp nagar, Indra vihar colon,korba(Singh Mansion)Korba, Chhattisgarh, 495677, India",,,,,n,,
+1737,Founders’ Pick: Mocha + Double Chocolate,1,Ashish Dhaliwal,apaul4012@gmail.com,9915400234,Y,"1119 sector 71 mohali SASnagar HouseRupnagar, Punjab, 160071, India",,,,,n,,
+1724,Variety Pack 4-pack,1,Laxman .,crycatbanana@gmail.com,7702711474,Y,"Jangaon Dist Jangaon State TelanganaPragati nagarWarangal, Telangana, 506167, India",,,,,y,4-5-58/2 Jangaon pragati nagar,Get first line address
